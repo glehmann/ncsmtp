@@ -142,7 +142,8 @@ def main(argv) :
 
 	parser = OptionParser()
         parser.add_option("-d", "--daemon", action="store_true", dest="daemon", help="run as daemon.")
-        parser.add_option("-v", action="store_true", dest="verbose", help="print log to stderr as well as syslog.")
+        parser.add_option("-p", "--pid", action="store_true", dest="pid", help="store pid in /var/run/ncsmtpd.pid.")
+        parser.add_option("-v", "--verbose", action="store_true", dest="verbose", help="print log to stderr as well as syslog.")
 	(options, args) = parser.parse_args()
 
 	if len(args) > 1 :
@@ -205,6 +206,22 @@ def main(argv) :
 	lognotice('ncsmtpd is listening for incoming mail')
 
 	#
+	# daemonize, if needed
+	#
+	if options.daemon :
+		daemonize()
+		lognotice('ncsmtpd is deamonized')
+	
+		
+	#
+	# store pid, if needed
+	#
+	if options.pid :
+		pidFile = file('/var/run/ncsmtpd.pid', "w")
+		pidFile.write(str(os.getpid())+"\n")
+		pidFile.close()
+	
+	#
 	# change user
 	#
 	if conf.has_option("smtpd", "owner") :
@@ -217,13 +234,6 @@ def main(argv) :
 			return ERROR_CANNOT_SETUID
 		logdebug("user is now %s" % user)
 	
-	#
-	# daemonize, if needed
-	#
-	if options.daemon :
-		daemonize()
-		lognotice('ncsmtpd is deamonized')
-
 	#
 	# enter main loop
 	#
