@@ -16,3 +16,7 @@ Null Client SMTP daemon :
  + lets you keep the default smtp configuration (localhost:smtp) of
    lots of softs
  + runs with low privileges
+
+
+Contact: gaetan.lehmann@jouy.inra.fr
+Web: http://gleh.dyndns.org/ncsmtp

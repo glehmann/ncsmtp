@@ -6,8 +6,8 @@ Name:		%{name}
 Summary:	Null Client SMTP daemon with aliases support
 Version:	%{version}
 Release:	%{release}
-URL:		http://voxel.jouy.inra.fr/darcs/ncsmtp
-Source0:	ncsmtp-%{version}.tar.bz2
+URL:		http://gleh.dyndns.org/ncsmtp/
+Source0:	http://gleh.dyndns.org/ncsmtp/ncsmtp-%{version}.tar.bz2
 License:	GPL
 Group:		System/Servers
 Provides:	smtpdaemon, MailTransportAgent
