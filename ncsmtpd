@@ -198,7 +198,9 @@ def main(argv) :
 	remotePort = conf.getint("smtpd", 'remote port')
 	aliasesPath = conf.get("smtpd", 'aliases')
 	defaultDomain = conf.get("smtpd", 'default domain')
-
+	if not remoteHost :
+		logerror('null remote server')
+		return ERROR_NULL_REMOTE_SERVER
 	server = NullClientSMTPServer((listenHost, listenPort), (remoteHost, remotePort), aliasesPath, defaultDomain)
 	lognotice('ncsmtpd is listening for incoming mail')
 
@@ -244,7 +246,7 @@ def main(argv) :
 #
 ERROR_TOO_MANY_ARGS = 1
 ERROR_CANNOT_SETUID = 2
-
+ERROR_NULL_REMOTE_SERVER = 3
 
 #
 # log methods
