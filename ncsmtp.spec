@@ -18,16 +18,22 @@ BuildArch:	noarch
 PreReq:          rpm-helper
 
 %description
-It is a program that replaces sendmail on workstations that
-should send their mail via the departmental mailhub from which they pick up
-their mail.  This program accepts mail and sends it to the mailhub. It is 
-also able to manage aliases, which is useful if administrator of mailhub
-and administrator of localhost are not the same person, or if account names
-are different on localhost and on mailhub.
-As it listen on standard SMPT port by default and is simple to configure,
-this program is useful with mini_sendmail in a chroot area, to keep the
-default localhost smtp server in lots of programs, and to log mail on
-localhost.
+A null client is a machine that can only send mail. It receives no
+mail from the network, and it does not deliver any mail locally.
+
+This program accepts mail and sends it to the mail hub. It can manage
+aliases, feature which is useful if mail hub administrator and local host
+administrator are not the same person, or if accounts are different on
+local host and on mail hub.
+
+Null Client SMTP daemon :
+ + manage aliases
+ + is easy to configure
+ + stores login and password in a file with restricted access
+ + logs mail transfers on local host
+ + lets you keep the default smtp configuration (localhost:smtp) of
+   lots of softs
+ + runs with low privileges
 
 
 %prep
