@@ -14,6 +14,7 @@ Provides:	smtpdaemon, MailTransportAgent
 Requires:	python
 PreReq:		mini_sendmail
 BuildRoot:	%{_tmppath}/%{name}-buildroot
+BuildArch:	noarch
 
 %description
 It is a program that replaces sendmail on workstations that
