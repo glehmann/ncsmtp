@@ -46,10 +46,17 @@ class NullClientSMTPServer(smtpd.PureProxy):
 	defaultDomain = ''
 
 	mailId = 0
+
+	remoteUser = None
+
+	remotePasswd = None
 	
-	def __init__(self, local, remote, aliasesPath, defaultDomain) :
+	def __init__(self, local, remote, aliasesPath, defaultDomain,
+		remoteUser=None, remotePasswd=None) :
 		self.confPath = aliasesPath
 		self.defaultDomain = defaultDomain
+		self.remoteUser = remoteUser
+		self.remotePasswd = remotePasswd
 		smtpd.PureProxy.__init__(self, local, remote)
 		
 	def process_message(self, peer, mailfrom, rcpttos, data):
@@ -118,6 +125,34 @@ class NullClientSMTPServer(smtpd.PureProxy):
 		# use process_message from superclass
 		smtpd.PureProxy.process_message(self, peer, mailfrom, newRcpt, data)
 		self.notice('mail is gone')
+
+	# function from PureProxy, patched to allow authentication
+	def _deliver(self, mailfrom, rcpttos, data):
+		import smtplib
+		refused = {}
+		try:
+			s = smtplib.SMTP()
+			s.connect(self._remoteaddr[0], self._remoteaddr[1])
+			if self.remoteUser :
+				s.login(self.remoteUser, self.remotePasswd)
+			try:
+				refused = s.sendmail(mailfrom, rcpttos, data)
+			finally:
+				s.quit()
+       		except smtplib.SMTPRecipientsRefused, e:
+			print >> DEBUGSTREAM, 'got SMTPRecipientsRefused'
+			refused = e.recipients
+		except (socket.error, smtplib.SMTPException), e:
+			print >> DEBUGSTREAM, 'got', e.__class__
+			# All recipients were refused.  If the exception had an associated
+			# error code, use it.  Otherwise,fake it with a non-triggering
+			# exception code.
+			errcode = getattr(e, 'smtp_code', -1)
+			errmsg = getattr(e, 'smtp_error', 'ignore')
+			for r in rcpttos:
+				refused[r] = (errcode, errmsg)
+		return refused
+
 
 	def notice(self, msg) :
 		lognotice("mail(%i): %s" % (self.mailId,  msg))
@@ -202,7 +237,13 @@ def main(argv) :
 	if not remoteHost :
 		logerror('null remote server')
 		return ERROR_NULL_REMOTE_SERVER
-	server = NullClientSMTPServer((listenHost, listenPort), (remoteHost, remotePort), aliasesPath, defaultDomain)
+	if conf.has_option("smtpd", "remote user") :
+		remoteUser = conf.get("smtpd", 'remote user')
+		remotePasswd = conf.getint("smtpd", 'remote passwd')
+	else :
+		remoteUser = None
+		remotePasswd = None
+	server = NullClientSMTPServer((listenHost, listenPort), (remoteHost, remotePort), aliasesPath, defaultDomain, remoteUser, remotePasswd)
 	lognotice('ncsmtpd is listening for incoming mail')
 
 	#
