@@ -3,10 +3,10 @@ ncSMTP is a Null Client SMTP daemon with aliases support
 It is a program that replaces sendmail on workstations that
 should send their mail via the departmental mailhub from which they pick up
 their mail.  This program accepts mail and sends it to the mailhub. It is 
-also able to manage aliases, which is usefull if administrator of mailhub
+also able to manage aliases, which is useful if administrator of mailhub
 and administrator of localhost are not the same person, or if account names
 are different on localhost and on mailhub.
 As it listen on standard SMPT port by default and is simple to configure,
-this program is usefull with mini_sendmail in a chroot area, to keep the
+this program is useful with mini_sendmail in a chroot area, to keep the
 default localhost smtp server in lots of programs, and to log mail on
 localhost.

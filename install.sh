@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 
 mkdir -p $DESTDIR/usr/sbin
 mkdir -p $DESTDIR/etc/rc.d/init.d
