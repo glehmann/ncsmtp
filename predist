@@ -1,4 +1,0 @@
-#!/bin/sh -x
-
-# darcs changes > ChangeLog
-perl -pi -e "s/^%define version\s+.+$/%define version `cat version`/g" ncsmtp.spec
