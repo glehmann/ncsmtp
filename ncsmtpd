@@ -133,10 +133,12 @@ class NullClientSMTPServer(smtpd.PureProxy):
 		
 		       
 
+verbose = False
 
 def main(argv) :
 	import pwd, sys, asyncore
 	from optparse import OptionParser
+	global verbose
 
 	parser = OptionParser()
         parser.add_option("-d", "--daemon", action="store_true", dest="daemon", help="run as daemon.")
@@ -175,13 +177,16 @@ def main(argv) :
 	#
 	opt = syslog.LOG_PID
 	if options.verbose :
-		opt += syslog.LOG_PERROR
+		# opt += syslog.LOG_PERROR
+		# this don't want to ouput anything
+		# use a dirty global var instead :-(
+		verbose = True
 	syslog.openlog('ncsmtpd', syslog.LOG_PID, syslog.LOG_MAIL)
 	syslog.setlogmask(syslog.LOG_UPTO(syslog.__getattribute__(conf.get("smtpd", 'log level'))))
 	# log previous parameters
 	logdebug('config file is %s' % args[0])
-	logdebug('%%(l)s is %s' % localhost)
-	logdebug('%%(d)s is %s' % localdomain)
+	logdebug('%%(l)s is "%s"' % localhost)
+	logdebug('%%(d)s is "%s"' % localdomain)
 	
 
 	#
@@ -246,18 +251,28 @@ ERROR_CANNOT_SETUID = 2
 #
 
 def logdebug(msg) :
+	if verbose :
+		print >> sys.stderr, 'D:', msg
 	return syslog.syslog(syslog.LOG_DEBUG, msg)
 
 def loginfo(msg) :
+	if verbose :
+		print >> sys.stderr, 'I:', msg
 	return syslog.syslog(syslog.LOG_INFO, msg)
 
 def lognotice(msg) :
+	if verbose :
+		print >> sys.stderr, 'N:', msg
 	return syslog.syslog(syslog.LOG_NOTICE, msg)
 
 def logwarning(msg) :
+	if verbose :
+		print >> sys.stderr, 'W:', msg
 	return syslog.syslog(syslog.LOG_WARNING, msg)
 
 def logerror(msg) :
+	if verbose :
+		print >> sys.stderr, 'E:', msg
 	return syslog.syslog(syslog.LOG_ERR, msg)
 
 
