@@ -1,5 +1,6 @@
 Null Client SMTP daemon with aliases support
 
+DESCRIPTION:
 A null client is a machine that can only send mail. It receives no
 mail from the network, and it does not deliver any mail locally.
 
@@ -18,5 +19,22 @@ Null Client SMTP daemon :
  + runs with low privileges
 
 
-Contact: gaetan.lehmann@jouy.inra.fr
-Web: http://gleh.dyndns.org/ncsmtp
+AUTHOR: Gaetan Lehmann
+
+WEBSITE: http://gleh.dyndns.org/uptodate/
+
+EMAIL: gaetan.lehmann@jouy.inra.fr
+
+LICENSE: GPL (see COPYING file)
+
+DARCS :
+ncsmtp source code is available in a Darcs repository.
+http://darcs.net/
+Fill free to get it with
+
+     darcs get --partial http://gleh.dyndns.org/ncsmtp/
+
+and to send me patches with
+
+    darcs send
+
