@@ -6,11 +6,11 @@ Name:		%{name}
 Summary:	Null Client SMTP daemon with aliases support
 Version:	%{version}
 Release:	%{release}
-#URL:		
+URL:		http://voxel.jouy.inra.fr/darcs/ncsmtp
 Source0:	ncsmtp-%{version}.tar.bz2
 License:	GPL
 Group:		System/Servers
-#Provides:	smtpdaemon, MailTransportAgent
+Provides:	smtpdaemon, MailTransportAgent
 Requires:	python
 PreReq:		mini_sendmail
 BuildRoot:	%{_tmppath}/%{name}-buildroot
