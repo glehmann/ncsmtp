@@ -1,0 +1,71 @@
+[alias]
+# this file is mostly stollen from postfix aliases
+
+postmaster= root
+
+# Many mailers use this address to represent the empty SMTP return
+# path
+MAILER-DAEMON=  postmaster
+
+
+# Common aliases for system accounts.
+bin=            root
+daemon=         root
+games=          root
+ingres=         root
+nobody=         root
+system=         root
+toor=           root
+foo=            root
+falken=         root
+
+# Well-known aliases.
+admin=          root
+manager=        root
+dumper=         root
+operator=       root
+
+# traps to catch security attacks
+decode=         root
+moof=           root
+moog=           root
+
+# The following aliases are required by RFC 2142
+info=           staff
+marketing=      staff
+sales=          staff
+support=        staff
+
+# Standard aliases also defined by RFC 2142
+abuse=          postmaster
+# reports of network infrastructure difficulties
+noc=            root
+# address to report secuirty problems
+security=       root
+# DNS administrator (DNS soa records should use this)
+hostmaster=     root
+# Usenet news service administrator
+news=           usenet
+usenet=         root
+# http/web service administrator
+www=            webmaster
+webmaster=      root
+# UUCP service administrator
+uucp=           root
+# FTP administrator (especially anonymouse FTP)
+ftp=            root
+
+# Commonly used group aliases:
+#
+staff=          postmaster
+office=         postmaster
+all=            postmaster
+tech=           postmaster
+ops=            postmaster
+
+# Person who should get root's mail.
+# CHANGE THIS LINE to an account of a HUMAN
+# root=           user@example.com
+
+
+

@@ -1,0 +1,313 @@
+#!/bin/env python
+#coding: iso-8859-15
+
+# a Null Client SMTP daemon with aliases support
+# Copyright (C) 2005  Gaëtan Lehmann <gaetan.lehmann@jouy.inra.fr>
+# 
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software
+# Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+
+
+import smtpd
+import ConfigParser
+import socket
+import syslog
+from  email.Parser import Parser as EmailParser
+import os
+
+def isLocalhost(host) :
+	localhost = socket.gethostname()
+	if host == localhost :
+		return True
+	if host == localhost.split('.')[0] :
+		return True
+	if host == 'localhost' :
+		return True
+	if host == 'localhost.localdomain' :
+		return True
+	return False
+
+
+class NullClientSMTPServer(smtpd.PureProxy):
+
+	confPath = ''
+
+	defaultDomain = ''
+
+	mailId = 0
+	
+	def __init__(self, local, remote, aliasesPath, defaultDomain) :
+		self.confPath = aliasesPath
+		self.defaultDomain = defaultDomain
+		smtpd.PureProxy.__init__(self, local, remote)
+		
+	def process_message(self, peer, mailfrom, rcpttos, data):
+		self.mailId += 1
+		self.notice('incoming mail from %s' % peer[0])
+		self.notice('sender: %s' % mailfrom)
+		self.notice('receiver(s): %s' % ", ".join(rcpttos))
+
+		mp = EmailParser().parsestr(data) 
+		self.info('subject: %s' % mp['subject'])
+		
+		# 
+		# load config file
+		#
+		conf = ConfigParser.SafeConfigParser()
+		confFile = file(self.confPath)
+		conf.readfp(confFile)
+		confFile.close()
+		
+		#
+		# apply aliases
+		#
+		newRcpt = []
+		# look at each recipient
+		for rcpt in rcpttos :
+			emailElts = rcpt.split('@')
+			user = emailElts[0]
+			# get host
+			if len(emailElts) == 2 :
+				host = emailElts[1]
+			else :
+				host = 'localhost'
+
+			# apply aliases only if destination is localhost
+			if isLocalhost(host) :
+				self.debug('destination is localhost')
+				itr = 0
+				aliases = [user]
+				while conf.has_option('alias', user) and itr < 100 :
+					newUser = conf.get('alias', user)
+					if newUser not in aliases :
+						aliases.append(newUser)
+					self.debug('%s is %s' % (user, newUser))
+					user = newUser
+					itr += 1
+				if itr == 100 :
+					self.error('infinite loop in aliases (%s)' % ", ".join(aliases))
+					self.error('drop %s from receivers list' % rcpt)
+				else :
+					# add host if final alias does not contains one
+					if not '@' in user :
+						user += '@' + self.defaultDomain
+					self.info('%s is mapped to %s' % (rcpt, user))
+
+					# finally, add recipient to the new list
+					newRcpt.append(user)
+			else :
+				# destination is not localhost
+				# just add recipient to the new list
+				newRcpt.append(rcpt)
+				
+		#
+		# forward the mail
+		#
+		
+		# use process_message from superclass
+		smtpd.PureProxy.process_message(self, peer, mailfrom, newRcpt, data)
+		self.notice('mail is gone')
+
+	def notice(self, msg) :
+		lognotice("mail(%i): %s" % (self.mailId,  msg))
+		
+	def info(self, msg) :
+		loginfo("mail(%i): %s" % (self.mailId,  msg))
+		
+	def error(self, msg) :
+		logerror("mail(%i): %s" % (self.mailId,  msg))
+		
+	def debug(self, msg) :
+		logdebug("mail(%i): %s" % (self.mailId,  msg))
+		
+		       
+
+
+def main(argv) :
+	import pwd, sys, asyncore
+	from optparse import OptionParser
+
+	parser = OptionParser()
+        parser.add_option("-d", "--daemon", action="store_true", dest="daemon", help="run as daemon.")
+        parser.add_option("-v", action="store_true", dest="verbose", help="print log to stderr as well as syslog.")
+	(options, args) = parser.parse_args()
+
+	if len(args) > 1 :
+		print >> sys.stderr, "Too many arguments."
+		return ERROR_TOO_MANY_ARGS
+	
+	# use /etc/ncsmtp/main.conf by default
+	if not args :
+		args = ['/etc/ncsmtp/main.conf']
+	
+	
+	#
+	# get localhost et localdomain
+	#
+	localhost = socket.gethostname()
+	pos = localhost.find(".")
+	if pos == -1 :
+		localdomain = ""
+	else :
+		localdomain = localhost[pos+1:]
+
+	# 
+	# load config file
+	#
+	conf = ConfigParser.SafeConfigParser({"l":localhost, "d":localdomain})
+	confFile = file(args[0])
+	conf.readfp(confFile)
+	confFile.close()
+
+	#
+	# init log system
+	#
+	opt = syslog.LOG_PID
+	if options.verbose :
+		opt += syslog.LOG_PERROR
+	syslog.openlog('ncsmtpd', syslog.LOG_PID, syslog.LOG_MAIL)
+	syslog.setlogmask(syslog.LOG_UPTO(syslog.__getattribute__(conf.get("smtpd", 'log level'))))
+	# log previous parameters
+	logdebug('config file is %s' % args[0])
+	logdebug('%%(l)s is %s' % localhost)
+	logdebug('%%(d)s is %s' % localdomain)
+	
+
+	#
+	# create server object
+	#	
+	listenHost = conf.get("smtpd", 'listen host')
+	listenPort = conf.getint("smtpd", 'listen port')
+	remoteHost = conf.get("smtpd", 'remote host')
+	remotePort = conf.getint("smtpd", 'remote port')
+	aliasesPath = conf.get("smtpd", 'aliases')
+	defaultDomain = conf.get("smtpd", 'default domain')
+
+	server = NullClientSMTPServer((listenHost, listenPort), (remoteHost, remotePort), aliasesPath, defaultDomain)
+	lognotice('ncsmtpd is listening for incoming mail')
+
+	#
+	# change user
+	#
+	if conf.has_option("smtpd", "owner") :
+		user = conf.get("smtpd", "owner")
+		uid = pwd.getpwnam(user)[2]
+		try:
+			os.setuid(uid)
+		except OSError, e:
+			logerror('Cannot change to "%s" owner.' % user)
+			return ERROR_CANNOT_SETUID
+		logdebug("user is now %s" % user)
+	
+	#
+	# daemonize, if needed
+	#
+	if options.daemon :
+		daemonize()
+		lognotice('ncsmtpd is deamonized')
+
+	#
+	# enter main loop
+	#
+	try:
+		asyncore.loop()
+	except KeyboardInterrupt:
+		pass
+
+
+	#
+	# exit 
+	#
+	lognotice('daemon is going down')
+	syslog.closelog()
+	return 0
+
+
+#
+# error codes
+#
+ERROR_TOO_MANY_ARGS = 1
+ERROR_CANNOT_SETUID = 2
+
+
+#
+# log methods
+#
+
+def logdebug(msg) :
+	return syslog.syslog(syslog.LOG_DEBUG, msg)
+
+def loginfo(msg) :
+	return syslog.syslog(syslog.LOG_INFO, msg)
+
+def lognotice(msg) :
+	return syslog.syslog(syslog.LOG_NOTICE, msg)
+
+def logwarning(msg) :
+	return syslog.syslog(syslog.LOG_WARNING, msg)
+
+def logerror(msg) :
+	return syslog.syslog(syslog.LOG_ERR, msg)
+
+
+# from kibot
+def daemonize(stdin='/dev/null', stdout='/dev/null', stderr='/dev/null'):
+    '''This forks the current process into a daemon.
+    The stdin, stdout, and stderr arguments are file names that
+    will be opened and be used to replace the standard file descriptors
+    in sys.stdin, sys.stdout, and sys.stderr.
+    These arguments are optional and default to /dev/null.
+    Note that stderr is opened unbuffered, so
+    if it shares a file with stdout then interleaved output
+    may not appear in the order that you expect.
+    '''
+    # Do first fork.
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0) # Exit first parent.
+    except OSError, e:
+        sys.stderr.write("fork #1 failed: (%d) %s\n" % (e.errno, e.strerror)    )
+        sys.exit(1)
+
+    # Decouple from parent environment.
+    os.chdir("/")
+    os.umask(0)
+    os.setsid()
+
+    # Do second fork.
+    try:
+        pid = os.fork()
+        if pid > 0:
+            sys.exit(0) # Exit second parent.
+    except OSError, e:
+        sys.stderr.write("fork #2 failed: (%d) %s\n" % (e.errno, e.strerror)    )
+        sys.exit(1)
+
+    # Now I am a daemon!
+
+    # Redirect standard file descriptors.
+    si = file(stdin, 'r')
+    so = file(stdout, 'a+')
+    se = file(stderr, 'a+', 0)
+    os.dup2(si.fileno(), sys.stdin.fileno())
+    os.dup2(so.fileno(), sys.stdout.fileno())
+    os.dup2(se.fileno(), sys.stderr.fileno())
+
+
+
+
+if __name__ == '__main__':
+	import sys
+	sys.exit(main(sys.argv))
