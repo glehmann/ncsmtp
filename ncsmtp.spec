@@ -1,11 +1,11 @@
 %define name		ncsmtp
 %define version		0.1
-%define release		1mdk
+%define release		1
 
 Name:		%{name}
 Summary:	Null Client SMTP daemon with aliases support
 Version:	%{version}
-Release:	%{release}
+Release:	%mkrel %{release}
 URL:		http://gleh.dyndns.org/ncsmtp/
 Source0:	http://gleh.dyndns.org/ncsmtp/ncsmtp-%{version}.tar.bz2
 License:	GPL
@@ -60,9 +60,6 @@ DESTDIR=%buildroot sh install.sh
 
 
 %post
-# Install alternatives:
-update-alternatives --install %{_sbindir}/sendmail mta %{_sbindir}/mini_sendmail 20
-
 # Install service:
 %_post_service ncsmtp
 
@@ -70,14 +67,5 @@ update-alternatives --install %{_sbindir}/sendmail mta %{_sbindir}/mini_sendmail
 %preun
 # Remove service:
 %_preun_service ncsmtp
-
-if [ $1 = 0 ]; then
-	update-alternatives --remove mta %{_sbindir}/mini_sendmail
-fi
-
-
-%changelog
-* Thu Mar 17 2005 Gaetan Lehmann <gaetan.lehmann@jouy.inra.fr> 0.1-1mdk
-- initial contrib
 
 
