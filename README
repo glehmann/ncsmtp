@@ -21,7 +21,7 @@ Null Client SMTP daemon :
 
 AUTHOR: Gaetan Lehmann
 
-WEBSITE: http://gleh.dyndns.org/uptodate/
+WEBSITE: http://voxel.jouy.inra.fr/darcs/ncsmtp/
 
 EMAIL: gaetan.lehmann@jouy.inra.fr
 
@@ -32,7 +32,7 @@ ncsmtp source code is available in a Darcs repository.
 http://darcs.net/
 Fill free to get it with
 
-     darcs get --partial http://gleh.dyndns.org/ncsmtp/
+     darcs get --partial http://voxel.jouy.inra.fr/darcs/ncsmtp/
 
 and to send me patches with
 
