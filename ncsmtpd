@@ -199,7 +199,7 @@ def main(argv) :
 	
 	
 	#
-	# get localhost et localdomain
+	# get localhost and localdomain
 	#
 	localhost = socket.gethostname()
 	pos = localhost.find(".")
@@ -242,9 +242,12 @@ def main(argv) :
 	remotePort = conf.getint("smtpd", 'remote port')
 	aliasesPath = conf.get("smtpd", 'aliases')
 	defaultDomain = conf.get("smtpd", 'default domain')
-	if not remoteHost :
-		logerror('null remote server')
+	try :
+		socket.gethostbyname(remoteHost)
+	except :
+		logerror('unable to find remote server "%s"' % remoteHost)
 		return ERROR_NULL_REMOTE_SERVER
+	
 	if conf.has_option("smtpd", "remote user") :
 		remoteUser = conf.get("smtpd", 'remote user')
 		remotePasswd = conf.getint("smtpd", 'remote passwd')
