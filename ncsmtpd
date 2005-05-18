@@ -117,7 +117,15 @@ class NullClientSMTPServer(smtpd.PureProxy):
 				# destination is not localhost
 				# just add recipient to the new list
 				newRcpt.append(rcpt)
-				
+		
+		#
+		# add host if final alias does not contains one
+		#
+		
+		if not '@' in mailfrom :
+			mailfrom += '@' + self.defaultDomain
+			self.debug('mail is now from %s' % mailfrom)
+		
 		#
 		# forward the mail
 		#
