@@ -33,12 +33,12 @@ while i < len(sys.argv) :
         options["-bcc"] = True
     elif sys.argv[i] == "-bs" : 
         options["-bs"] = True
-    elif sys.argv[i].startswith("-f") :
-	if sys.argv[i] == "-f" :
-	    options["-f"] = sys.argv[i+1]
-	    i += 1
-	else :
-	    options["-f"] = sys.argv[i][2:]
+#     elif sys.argv[i].startswith("-f") :
+# 	if sys.argv[i] == "-f" :
+# 	    options["-f"] = sys.argv[i+1]
+# 	    i += 1
+# 	else :
+# 	    options["-f"] = sys.argv[i][2:]
     elif sys.argv[i].startswith("-F") :
 	if sys.argv[i] == "-F":
 	    options["-F"] = sys.argv[i+1]
@@ -83,7 +83,9 @@ else :
     
 envvars = ['MAILNAME', 'NAME']
 envvalues = [v for v in map(os.getenv, envvars) if v]
-if envvalues :
+if options['-F'] :
+    mailname = options['-F']
+elif envvalues :
     mailname = envvalues[0]
 else :
     # get login name
