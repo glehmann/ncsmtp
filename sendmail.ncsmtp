@@ -1,0 +1,113 @@
+#!/usr/bin/python
+#coding: iso-8859-15
+
+import email.Parser, sys, smtplib, socket, os, pwd
+
+#init default values
+options = {}
+options["-n"] = False
+options["-bcc"] = False
+options["-bs"] = False
+options["-f"] = ""
+options["-F"] = ""
+options["-N"] = ""
+options["-o"] = ""
+options["-t"] = ""
+options["-q"] = ""
+options["-R"] = ""
+options["-V"] = ""
+options["-S"] = ""
+
+# sendmail have a realy dirty command line option which cannot be parsed 
+# with python's option parser :-(
+# great! let's do it by hand !!
+
+
+args = []
+
+i = 1
+while i < len(sys.argv) :
+    if sys.argv[i] == "-n" : 
+        options["-n"] = True
+    elif sys.argv[i] == "-bcc" : 
+        options["-bcc"] = True
+    elif sys.argv[i] == "-bs" : 
+        options["-bs"] = True
+    elif sys.argv[i].startswith("-f") :
+	if sys.argv[i] == "-f" :
+	    options["-f"] = sys.argv[i+1]
+	    i += 1
+	else :
+	    options["-f"] = sys.argv[i][2:]
+    elif sys.argv[i].startswith("-F") :
+	if sys.argv[i] == "-F":
+	    options["-F"] = sys.argv[i+1]
+	    i += 1
+	else :
+	    options["-F"] = sys.argv[i][2:]
+    elif sys.argv[i].startswith("-") : 
+        # ignore this option
+	pass
+    else :
+        args.append(sys.argv[i])
+    i += 1
+
+# python's email parser make parsing so easy :
+mp = email.Parser.Parser().parse(sys.stdin)	
+
+
+# now we need a "from"
+
+# get it from command line
+# mailuser = options["-f"]
+
+# if not mailuser :
+# try to get it from env
+envvars = ['MAILSUSER', 'MAILUSER', 'LOGNAME', 'LOGUSER', 'USER']
+envvalues = [v for v in map(os.getenv, envvars) if v]
+if envvalues :
+    mailuser = envvalues[0]
+else :
+    # get login name
+    mailuser = pwd.getpwuid(os.getuid())[0]
+
+
+envvars = ['MAILSHOST', 'MAILHOST']
+envvalues = [v for v in map(os.getenv, envvars) if v]
+if envvalues :
+    mailhost = envvalues[0]
+else :
+    # get hostname
+    mailhost = socket.gethostname()
+
+    
+envvars = ['MAILNAME', 'NAME']
+envvalues = [v for v in map(os.getenv, envvars) if v]
+if envvalues :
+    mailname = envvalues[0]
+else :
+    # get login name
+    mailname = pwd.getpwuid(os.getuid())[4]
+
+
+if mailname :
+    From = '%s <%s@%s>' % (mailname, mailuser, mailhost)
+else :
+    From = '%s@%s' % (mailuser, mailhost)
+
+mp["From"] = From
+
+#-F MAILNAME, NAME, mail, pwd name uid
+#-f MAILSUSER, MAILUSER, mail, LOGNAME, LOGUSER, USER, uid
+#-f MAILSHOST, MAILHOST, mail, hostname
+
+
+
+s = smtplib.SMTP('127.0.0.1')
+s.sendmail(mp["From"], args, str(mp))
+s.quit()
+
+#TODO: code de retour
+
+
+
