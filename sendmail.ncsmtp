@@ -90,7 +90,8 @@ elif envvalues :
 else :
     # get login name
     mailname = pwd.getpwuid(os.getuid())[4]
-
+    if mailname == mailuser :
+	mailname = ""
 
 if mailname :
     From = '%s <%s@%s>' % (mailname, mailuser, mailhost)
