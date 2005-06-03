@@ -54,6 +54,8 @@ webmaster=      root
 uucp=           root
 # FTP administrator (especially anonymouse FTP)
 ftp=            root
+# postgresql administrator
+postgres=       root
 
 # Commonly used group aliases:
 #
