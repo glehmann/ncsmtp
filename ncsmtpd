@@ -278,8 +278,9 @@ def main(argv) :
 	#
 	if conf.has_option("smtpd", "owner") :
 		user = conf.get("smtpd", "owner")
-		uid = pwd.getpwnam(user)[2]
+		(uid, gid) = pwd.getpwnam(user)[2:4]
 		try:
+			os.setgid(gid)
 			os.setuid(uid)
 		except OSError, e:
 			logerror('Cannot change to "%s" owner.' % user)
