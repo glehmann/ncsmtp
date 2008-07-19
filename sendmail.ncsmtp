@@ -18,7 +18,7 @@ options = {}
 options["-F"] = ""
 # options["-N"] = ""
 # options["-o"] = ""
-# options["-t"] = ""
+options["-t"] = False
 # options["-q"] = ""
 # options["-R"] = ""
 # options["-V"] = ""
@@ -40,26 +40,28 @@ while i < len(sys.argv) :
 #     elif sys.argv[i] == "-bs" : 
 #         options["-bs"] = True
 #     elif sys.argv[i].startswith("-f") :
-# 	if sys.argv[i] == "-f" :
-# 	    options["-f"] = sys.argv[i+1]
-# 	    i += 1
-# 	else :
-# 	    options["-f"] = sys.argv[i][2:]
+#         if sys.argv[i] == "-f" :
+#             options["-f"] = sys.argv[i+1]
+#             i += 1
+#         else :
+#             options["-f"] = sys.argv[i][2:]
     if sys.argv[i].startswith("-F") :
-	if sys.argv[i] == "-F":
-	    options["-F"] = sys.argv[i+1]
-	    i += 1
-	else :
-	    options["-F"] = sys.argv[i][2:]
+        if sys.argv[i] == "-F":
+            options["-F"] = sys.argv[i+1]
+            i += 1
+        else :
+            options["-F"] = sys.argv[i][2:]
+    elif sys.argv[i] == "-t" : 
+        options["-t"] = True
     elif sys.argv[i].startswith("-") : 
         # ignore this option
-	pass
+        pass
     else :
         args.append(sys.argv[i])
     i += 1
 
 # python's email parser make parsing so easy :
-mp = email.Parser.Parser().parse(sys.stdin)	
+mp = email.Parser.Parser().parse(sys.stdin)        
 
 if os.getenv("SENDMAIL_NCSMTP_DEBUG"):
   print >> sys.stderr, "*" * 80
@@ -68,49 +70,52 @@ if os.getenv("SENDMAIL_NCSMTP_DEBUG"):
 
 # now we need a "from"
 if not mp.has_key('From') :
-	# try to get it from env
-	envvars = ['MAILSUSER', 'MAILUSER', 'LOGNAME', 'LOGUSER', 'USER']
-	envvalues = [v for v in map(os.getenv, envvars) if v]
-	if envvalues :
-		mailuser = envvalues[0]
-	else :
-		# get login name
-		mailuser = pwd.getpwuid(os.getuid())[0]
-	
-	
-	envvars = ['MAILSHOST', 'MAILHOST']
-	envvalues = [v for v in map(os.getenv, envvars) if v]
-	if envvalues :
-		mailhost = envvalues[0]
-	else :
-		# get hostname
-		mailhost = socket.gethostname()
-	
-	
-	envvars = ['MAILNAME', 'NAME']
-	envvalues = [v for v in map(os.getenv, envvars) if v]
-	if options['-F'] :
-		mailname = options['-F']
-	elif envvalues :
-		mailname = envvalues[0]
-	else :
-		# get login name
-		mailname = pwd.getpwuid(os.getuid())[4]
-		if mailname == mailuser :
-			mailname = ""
-	
-	if mailname :
-		From = '%s <%s@%s>' % (mailname, mailuser, mailhost)
-	else :
-		From = '%s@%s' % (mailuser, mailhost)
-	
-	mp["From"] = From
+        # try to get it from env
+        envvars = ['MAILSUSER', 'MAILUSER', 'LOGNAME', 'LOGUSER', 'USER']
+        envvalues = [v for v in map(os.getenv, envvars) if v]
+        if envvalues :
+                mailuser = envvalues[0]
+        else :
+                # get login name
+                mailuser = pwd.getpwuid(os.getuid())[0]
+        
+        
+        envvars = ['MAILSHOST', 'MAILHOST']
+        envvalues = [v for v in map(os.getenv, envvars) if v]
+        if envvalues :
+                mailhost = envvalues[0]
+        else :
+                # get hostname
+                mailhost = socket.gethostname()
+        
+        
+        envvars = ['MAILNAME', 'NAME']
+        envvalues = [v for v in map(os.getenv, envvars) if v]
+        if options['-F'] :
+                mailname = options['-F']
+        elif envvalues :
+                mailname = envvalues[0]
+        else :
+                # get login name
+                mailname = pwd.getpwuid(os.getuid())[4]
+                if mailname == mailuser :
+                        mailname = ""
+        
+        if mailname :
+                From = '%s <%s@%s>' % (mailname, mailuser, mailhost)
+        else :
+                From = '%s@%s' % (mailuser, mailhost)
+        
+        mp["From"] = From
 
 #-F MAILNAME, NAME, mail, pwd name uid
 #-f MAILSUSER, MAILUSER, mail, LOGNAME, LOGUSER, USER, uid
 #-f MAILSHOST, MAILHOST, mail, hostname
 
-
+# now we need a "to"
+if options["-t"] :
+  for t in mp["To"].split(","):
+    args.append(t.strip())
 
 s = smtplib.SMTP('127.0.0.1')
 s.sendmail(mp["From"], args, str(mp))
