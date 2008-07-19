@@ -3,6 +3,12 @@
 
 import email.Parser, sys, smtplib, socket, os, pwd
 
+# print debug infos
+if os.getenv("SENDMAIL_NCSMTP_DEBUG"):
+  print >> sys.stderr, "*" * 80
+  print >> sys.stderr, sys.argv
+  print >> sys.stderr, "*" * 80
+
 #init default values
 options = {}
 # options["-n"] = False
@@ -55,6 +61,10 @@ while i < len(sys.argv) :
 # python's email parser make parsing so easy :
 mp = email.Parser.Parser().parse(sys.stdin)	
 
+if os.getenv("SENDMAIL_NCSMTP_DEBUG"):
+  print >> sys.stderr, "*" * 80
+  print >> sys.stderr, mp
+  print >> sys.stderr, "*" * 80
 
 # now we need a "from"
 if not mp.has_key('From') :
